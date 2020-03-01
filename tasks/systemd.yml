@@ -1,0 +1,15 @@
+---
+
+- tags: systemd
+  when: ansible_virtualization_type != "docker"
+  block:
+
+    #------------------------------------------------------------------------------#
+    # enable snd start service
+    #------------------------------------------------------------------------------#
+
+    - name: systemd | enable and start service
+      systemd:
+        name: "{{ nginx_service_name }}"
+        state: started
+        enabled: true

@@ -1,0 +1,46 @@
+---
+
+- when: ansible_virtualization_type != "docker"
+  block:
+
+    #------------------------------------------------------------------------------#
+    # helper handlers
+    #------------------------------------------------------------------------------#
+
+    - name: systemd | restart nginx
+      debug:
+        msg: "checking config..."
+      changed_when: true
+      notify:
+        - systemd | check config
+        - systemd | restart daemon
+
+    - name: systemd | reload nginx
+      debug:
+        msg: "checking config..."
+      changed_when: true
+      notify:
+        - systemd | check config
+        - systemd | reload daemon
+
+    #------------------------------------------------------------------------------#
+    # check nginx config
+    #------------------------------------------------------------------------------#
+
+    - name: systemd | check config
+      shell: "{{ nginx_binary_path }}/{{ nginx_binary_name }} -t"
+      check_mode: false
+
+    #------------------------------------------------------------------------------#
+    # systemd
+    #------------------------------------------------------------------------------#
+
+    - name: systemd | restart daemon
+      systemd:
+        name: "{{ nginx_service_name }}"
+        state: restarted
+
+    - name: systemd | reload daemon
+      systemd:
+        name: "{{ nginx_service_name }}"
+        state: reloaded

@@ -1,0 +1,7 @@
+---
+
+- import_tasks: selinux.yml
+- import_tasks: yum.yml
+- import_tasks: config.yml
+- import_tasks: cleanup.yml
+- import_tasks: systemd.yml

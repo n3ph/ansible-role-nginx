@@ -1,0 +1,53 @@
+---
+
+nginx_binary_name: nginx
+nginx_binary_path: /usr/sbin/
+nginx_service_name: "{{ nginx_binary_name }}"
+
+nginx_config_dir: /etc/nginx
+
+nginx_http_default_params:
+  - sendfile on
+  - tcp_nopush on
+  - tcp_nodelay on
+  - server_tokens off
+  - access_log "/var/log/nginx/access.log"
+  - error_log "/var/log/nginx/error.log" {{nginx_error_log_level}}
+
+nginx_user: nginx
+nginx_group: "{{ nginx_user }}"
+
+nginx_pid_file: "/var/run/{{ nginx_service_name }}.pid"
+
+nginx_worker_processes: "{% if ansible_processor_vcpus is defined %}{{ ansible_processor_vcpus }}{% else %}auto{% endif %}"
+nginx_worker_rlimit_nofile: 1024
+
+nginx_error_log_level: "error"
+
+nginx_config_user: root
+nginx_config_group: root
+
+nginx_max_clients: 1024
+
+nginx_extra_root_params:
+  - error_log /var/log/nginx/error.log error
+
+nginx_events_params:
+  - worker_connections {{ nginx_max_clients }}
+
+nginx_http_params: "{{ nginx_http_default_params }}"
+
+nginx_default_root: /usr/share/nginx/html
+
+nginx_sites:
+  default:
+    - listen 80 default_server
+    - server_name _
+    - root "{{ nginx_default_root }}"
+    - index index.html
+
+nginx_sites_directories: []
+
+nginx_configs: {}
+nginx_snippets: {}
+nginx_auth_basic_files: {}

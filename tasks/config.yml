@@ -1,0 +1,92 @@
+---
+
+- tags: config
+  block:
+
+    #------------------------------------------------------------------------------#
+    # directories
+    #------------------------------------------------------------------------------#
+
+    - name: config | create config directories
+      file:
+        path: "{{ nginx_config_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ nginx_config_user }}"
+        group: "{{ nginx_config_group }}"
+        mode: 0755
+      loop:
+        - sites-available
+        - sites-enabled
+        - conf.d
+        - auth_basic
+        - snippets
+        - modules-available
+        - modules-enabled
+
+    - name: config | create additional directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        recurse: true
+      loop: "{{ nginx_sites_directories }}"
+
+    - name: config | ensure log directory exist
+      file:
+        path: /var/log/nginx
+        state: directory
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        mode: 0755
+
+    #------------------------------------------------------------------------------#
+    # config templates
+    #------------------------------------------------------------------------------#
+
+    - name: config | main
+      template:
+        src: nginx.conf.j2
+        dest: "{{ nginx_config_dir }}/nginx.conf"
+      notify: systemd | restart nginx
+
+    - name: config | sites
+      template:
+        src: site.conf.j2
+        dest: "{{ nginx_config_dir }}/sites-available/{{ item.key }}.conf"
+      loop: "{{ query('dict', nginx_sites) }}"
+      notify: systemd | reload nginx
+
+    - name: config | configs
+      template:
+        src: config.conf.j2
+        dest: "{{ nginx_config_dir }}/conf.d/{{ item.key }}.conf"
+      loop: "{{ query('dict', nginx_configs) }}"
+      notify: systemd | reload nginx
+
+    - name: config | snippets
+      template:
+        src: config.conf.j2
+        dest: "{{ nginx_config_dir }}/snippets/{{ item.key }}.conf"
+      loop: "{{ query('dict', nginx_snippets) }}"
+      notify: systemd | reload nginx
+
+    - name: config | auth_basic
+      template:
+        src: auth_basic.j2
+        dest: "{{ nginx_config_dir }}/auth_basic/{{ item.key }}"
+        mode: 0750
+        group: "{{ nginx_group }}"
+      loop: "{{ query('dict', nginx_auth_basic_files) }}"
+
+    #------------------------------------------------------------------------------#
+    # links for enabled sites
+    #------------------------------------------------------------------------------#
+
+    - name: config | enable sites
+      file:
+        state: link
+        src: "{{ nginx_config_dir }}/sites-available/{{ item.key }}.conf"
+        dest: "{{ nginx_config_dir }}/sites-enabled/{{ item.key }}.conf"
+      loop: "{{ query('dict', nginx_sites) }}"
+      notify: systemd | reload nginx

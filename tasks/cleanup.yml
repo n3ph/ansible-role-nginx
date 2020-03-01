@@ -1,0 +1,88 @@
+---
+
+- tags: cleanup
+  block:
+
+    #------------------------------------------------------------------------------#
+    # configs
+    #------------------------------------------------------------------------------#
+
+    - name: cleanup | find config files
+      find:
+        path: "{{ nginx_config_dir }}/conf.d"
+        pattern: "*.conf"
+      register: config_files_result
+      changed_when: false
+
+    - name: cleanup | remove config files
+      file:
+        name: "{{ nginx_config_dir }}/conf.d/{{ item }}"
+        state: absent
+      loop: "{{ config_files_result.files | map(attribute='path') | list }}"
+      when: item[:-5] not in nginx_configs.keys()
+      notify: systemd | reload nginx
+
+    #------------------------------------------------------------------------------#
+    # snippets
+    #------------------------------------------------------------------------------#
+
+    - name: cleanup | find snippet files
+      find:
+        path: "{{ nginx_config_dir }}/snippets"
+        pattern: "*.conf"
+      register: snippet_files_result
+      changed_when: false
+
+    - name: cleanup | remove snippet files
+      file:
+        name: "{{ nginx_config_dir }}/snippets/{{ item }}"
+        state: absent
+      loop: "{{ snippet_files_result.files | map(attribute='path') | list }}"
+      when: item[:-5] not in nginx_configs.keys()
+      notify: systemd | reload nginx
+
+    #------------------------------------------------------------------------------#
+    # auth_basic
+    #------------------------------------------------------------------------------#
+
+    - name: cleanup | find auth_basic files
+      find:
+        path: "{{ nginx_config_dir }}/auth_basic"
+        pattern: "*"
+      register: auth_basic_files_result
+      changed_when: false
+
+    - name: cleanup | remove auth_basic files
+      file:
+        name: "{{ nginx_config_dir }}/auth_basic/{{ item }}"
+        state: absent
+      loop: "{{ auth_basic_files_result.files | map(attribute='path') | list }}"
+      when: item not in nginx_configs.keys()
+      notify: systemd | reload nginx
+
+    #------------------------------------------------------------------------------#
+    # sites
+    #------------------------------------------------------------------------------#
+
+    - name: cleanup | find enabled sites
+      find:
+        path: "{{ nginx_config_dir }}/sites-enabled"
+        patterns: "*.conf"
+      register: enabled_sites_result
+      changed_when: false
+
+    - name: cleanup | disable sites
+      file:
+        path: "{{ nginx_config_dir }}/sites-enabled/{{ item }}"
+        state: absent
+      loop: "{{ enabled_sites_result.files | map(attribute='path') | list }}"
+      when: item[:-5] not in nginx_sites.keys()
+      notify: systemd | reload nginx
+
+    - name: cleanup | remove sites
+      file:
+        path: "{{ nginx_config_dir }}/sites-available/{{ item }}"
+        state: absent
+      loop: "{{ enabled_sites_result.files | map(attribute='path') | list }}"
+      when: item[:-5] not in nginx_sites.keys()
+      notify: systemd | reload nginx

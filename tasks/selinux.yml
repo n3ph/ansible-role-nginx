@@ -1,0 +1,18 @@
+---
+
+- tags: SELinux
+  when: ansible_selinux and ansible_selinux.status == "enabled"
+  block:
+
+    #------------------------------------------------------------------------------#
+    # rlimit
+    #------------------------------------------------------------------------------#
+    # TODO: this is not working ATM
+    #       seems like the conditional is not true
+    #------------------------------------------------------------------------------#
+
+    - name: selinux | allow nginx to set rlimit
+      seboolean:
+        name: httpd_setrlimit
+        state: true
+        persistent: true
